@@ -91,9 +91,22 @@ function extractAllPortfolioData() {
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log('Content script received message:', request);
+  
+  if (request.action === 'ping') {
+    sendResponse({ success: true, message: 'Content script is ready' });
+    return true;
+  }
+  
   if (request.action === 'extractData') {
-    const data = extractAllPortfolioData();
-    sendResponse({ success: true, data: data });
+    try {
+      const data = extractAllPortfolioData();
+      console.log('Data extracted successfully:', data);
+      sendResponse({ success: true, data: data });
+    } catch (error) {
+      console.error('Error extracting data:', error);
+      sendResponse({ success: false, error: error.message });
+    }
   }
   return true;
 });

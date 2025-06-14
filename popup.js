@@ -59,6 +59,47 @@ document.addEventListener('DOMContentLoaded', async () => {
       extractBtn.textContent = '抽出中...';
       
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      
+      // Check if we're on MoneyForward page
+      if (!tab.url.includes('moneyforward.com')) {
+        statusEl.className = 'status error';
+        statusTextEl.textContent = 'MoneyForwardのページで使用してください';
+        return;
+      }
+      
+      // Try to inject content script if not already present
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          files: ['content.js']
+        });
+        // Wait a bit for content script to initialize
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } catch (injectionError) {
+        console.log('Content script may already be injected');
+      }
+      
+      // Test if content script is responsive with ping
+      let isConnected = false;
+      try {
+        const pingResponse = await chrome.tabs.sendMessage(tab.id, { action: 'ping' });
+        isConnected = pingResponse && pingResponse.success;
+      } catch (pingError) {
+        console.log('Content script not responsive, will reload page');
+      }
+      
+      if (!isConnected) {
+        // Reload page and inject content script
+        await chrome.tabs.reload(tab.id);
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for page reload
+        
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          files: ['content.js']
+        });
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
       const response = await chrome.tabs.sendMessage(tab.id, { action: 'extractData' });
       
       if (response && response.success) {
@@ -73,7 +114,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     } catch (error) {
       statusEl.className = 'status error';
-      statusTextEl.textContent = 'エラーが発生しました';
+      if (error.message.includes('Could not establish connection')) {
+        statusTextEl.textContent = 'ページを再読み込みしてから再試行してください';
+      } else {
+        statusTextEl.textContent = 'エラーが発生しました';
+      }
       console.error('Extract error:', error);
     } finally {
       extractBtn.disabled = false;

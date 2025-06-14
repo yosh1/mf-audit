@@ -125,10 +125,10 @@ async function callOpenAI(apiKey, prompt) {
 
 async function createReportTab(analysis, portfolioData) {
   const reportHtml = generateReportHtml(analysis, portfolioData);
-  const blob = new Blob([reportHtml], { type: 'text/html' });
-  const url = URL.createObjectURL(blob);
+  const encodedHtml = encodeURIComponent(reportHtml);
+  const dataUrl = `data:text/html;charset=utf-8,${encodedHtml}`;
   
-  const tab = await chrome.tabs.create({ url: url });
+  const tab = await chrome.tabs.create({ url: dataUrl });
   return tab.url;
 }
 
