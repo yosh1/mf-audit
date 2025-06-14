@@ -1,0 +1,12 @@
+{
+  "name": "mfaudit",
+  "version": "1.0.0",
+  "description": "Chrome extension to audit and export portfolio data from MoneyForward",
+  "author": "yosh1",
+  "scripts": {
+    "build": "echo 'Build script placeholder'",
+    "dev": "echo 'Development script placeholder'"
+  },
+  "devDependencies": {},
+  "dependencies": {}
+}
